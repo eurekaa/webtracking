@@ -7,21 +7,21 @@
 # File Name: database
 # Created: 09/11/13 22.11
 
-define ['jquery', 'scripts/libs/edijson/utility'], ($, utility)->
+define ['jquery', 'scripts/libs/edijson/config', 'scripts/libs/edijson/utility'], ($, config, utility)->
    
-   rest = (verb, table, parameters, options, callback)->
-      
+   rest = (verb, type, target, parameters, options, callback)->
       if typeof options is 'function' then callback = options; options = {}
       parameters = parameters || {}
       options = options || {}
+      async = (if utility.is_defined(options.async) then options.async else true)
       $.ajax
-         url: '/edijson/table/' + table.replace('.', '/'),
-         type: verb,
-         async: (if utility.is_defined(options.async) then options.async else true)
+         url: config.EDIJSON_URL + type + '/' + target.replace('.', '/')
+         type: verb
+         async: async
          dataType: 'json'
          data:
-            EDIJSON_SECURITY_USERNAME: 'n0v4t1'
-            EDIJSON_SECURITY_PASSWORD: 'aa389a8231c5370ab0c38e9fd4e0d17a'
+            EDIJSON_SECURITY_USERNAME: config.EDIJSON_SECURITY_USERNAME
+            EDIJSON_SECURITY_PASSWORD: config.EDIJSON_SECURITY_PASSWORD
             parameters: JSON.stringify(parameters)
             options: JSON.stringify(options)
          success: (data)->
@@ -29,20 +29,23 @@ define ['jquery', 'scripts/libs/edijson/utility'], ($, utility)->
             else callback null, data
          error: (xhr, status, err)-> callback err, null
    
+   procedure: (name, parameters, options, callback)->
+      rest 'GET', 'procedure', name, parameters, options, callback
    
-   select: (table, parameters, options, callback)-> rest 'GET', table, parameters, options, callback
+   select: (target, parameters, options, callback)-> 
+      rest 'GET', 'table', target, parameters, options, callback
    
-   insert: (table, parameters, options, callback)-> 
-      rest 'POST', table, parameters, options, (err, data)->
+   insert: (target, parameters, options, callback)-> 
+      rest 'POST', 'table', target, parameters, options, (err, data)->
          if not err then data = data[0]
          callback err, data
    
-   update: (table, parameters, options, callback)-> 
-      rest 'PUT', table, parameters, options, (err, data)->
+   update: (target, parameters, options, callback)-> 
+      rest 'PUT', 'table', target, parameters, options, (err, data)->
          if not err then data = data[0]
          callback err, data
    
-   delete: (table, parameters, options, callback)-> 
-      rest 'DELETE', table, parameters, options, (err, data)->
+   delete: (target, parameters, options, callback)-> 
+      rest 'DELETE', 'table', target, parameters, options, (err, data)->
          if not err then data = data[0]
          callback err, data

@@ -11,7 +11,7 @@
 define ['edijson', 'jquery_ui'], (edj, $)->
 
    # import stylesheet.
-   edj.gui.load_stylesheets 'styles/menu'
+   edj.ui.load_stylesheets 'styles/menu'
    
    # define widget.
    $.widget 'ui.menu',
@@ -27,6 +27,17 @@ define ['edijson', 'jquery_ui'], (edj, $)->
 
          # add element class.
          self.element.addClass self.options.class
+         self.options.target = $(self.options.target)
+
+         # hide menu.
+         self.element.transition opacity: 0, x: -self.element.width()
+
+         # create target container.
+         container = $('<div>', { 'class': 'container' })
+         self.options.target.append container
+         
+         # hide container
+         self.options.target.transition opacity: 0, x: self.options.target.width()
       
          # retrieve user info.
          user = edj.session.get 'user'
@@ -34,19 +45,12 @@ define ['edijson', 'jquery_ui'], (edj, $)->
          # create menu.
          self.element.empty()
          if edj.utility.to_upper(user.profile) is 'ADMIN'
-            self.element.append $('<button>', { 'rel': 'profiles', 'html': 'profili' })
-            self.element.append $('<button>', { 'rel': 'users', 'html': 'utenti' })
-         self.element.append $('<button>', { 'rel': 'shipments', 'html': 'spedizioni' })
+            #self.element.append $('<button>', { 'rel': 'profiles', 'html': 'profili' })
+            self.element.append $('<button>', { 'class': 'max_width', 'rel': 'users', 'html': 'utenti' }).button(icons: primary: 'ui-icon-person', secondary: 'ui-icon-circle-arrow-e')
+         self.element.append $('<button>', { 'class': 'max_width', 'rel': 'shipments', 'html': 'spedizioni' }).button(icons: primary: 'ui-icon-suitcase', secondary: 'ui-icon-circle-arrow-e')
          
          # bind buttons click event.
-         self.element.find('button').button().click( ->
-            self.load $(@).attr('rel')
-         )
-         
-         # create target container.
-         self.options.target = $(self.options.target)
-         container = $('<div>', { 'class': 'container' })
-         self.options.target.append container
+         self.element.find('button').on 'click', -> self.load $(@).attr('rel')
          
          # make container responsive.
          $(window).on 'resize', ->
@@ -58,28 +62,30 @@ define ['edijson', 'jquery_ui'], (edj, $)->
             
             # trigger resize event on element.
             container.trigger 'resized'
-
-         # resize container the first time.
-         $(window).trigger 'resize'
       
          # show menu.
-         self.element.animate_css 'bounceInLeft'
-            
+         self.element.transition opacity: 1, x: 0
+         
          # show container
-         self.options.target.animate_css 'bounceInRight'
+         self.options.target.transition { opacity: 1, x: 0 }, -> 
+            
+            # trigger shipments click (first app).
+            self.element.find('button[rel="shipments"]').trigger 'click'
+         
+         # resize container the first time.
+         $(window).trigger 'resize'
       
       
       _destroy: ->
          self = @
          
          # destroy menu.
-         self.element.animate_css 'bounceOutLeft', ->
+         self.element.transition { opacity: 0, x: -self.element.width() }, ->
             self.element.empty()
             self.element.removeClass self.options.class
             
          # destroy container.
-         self.options.target.animate_css 'bounceOutRight', ->
-            self.options.target.css display: 'none'
+         self.options.target.transition { opacity: 0, x: self.options.target.width() }, ->
             self.options.target.empty()
       
       
@@ -87,18 +93,23 @@ define ['edijson', 'jquery_ui'], (edj, $)->
          self = @
          
          # get container node.
-         container = self.options.target.find '.container'
+         container = self.options.target.find '.container' 
          
          # unload current plugin.
          if self.options.current
-            container.animate_css 'bounceOutDown'
+            container.transition opacity: 0
             eval 'container.' + self.options.current + '("destroy");'
-            container.css visibility: 'hidden'
          
          # register new plugin.
          self.options.current = plugin
          
-         # load, run and show new plugin.
+         # load new plugin.
          require ['scripts/' + plugin], ->
+            
+            # show container when plugin is ready.
+            container.on 'ready', ->
+               container.transition opacity: 1
+               container.off 'ready'
+            
+            # init plugin.
             eval 'container.' + plugin + '();'
-            container.animate_css 'bounceInDown'

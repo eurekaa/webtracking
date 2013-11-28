@@ -11,7 +11,7 @@
 define ['edijson', 'jquery_ui', 'jquery_grid'], (edj, $)->
    
    # load stylesheets.
-   edj.gui.load_stylesheets 'styles/libs/jquery/jquery.grid'
+   edj.ui.load_stylesheets 'styles/libs/jquery/jquery.grid'
    
    $.widget 'ui.profiles',
       
@@ -90,14 +90,14 @@ define ['edijson', 'jquery_ui', 'jquery_grid'], (edj, $)->
             
             # test input validity.
             name = form.find('input#name').val()
-            if name is '' then return edj.gui.show_message 'Errore Utente', 'Compilare il campo nome.'
+            if name is '' then return edj.ui.show_message 'Errore Utente', 'Compilare il campo nome.'
             edj.database.select 'profiling.profiles', name: name, (err, data)->
-               if err then return edj.gui.show_message 'Errore di Sistema', err.message
-               if data.length > 0 then return edj.gui.show_message 'Errore Utente', 'Il profilo ' + name + ' &egrave gi&agrave presente.'
+               if err then return edj.ui.show_message 'Errore di Sistema', err.message
+               if data.length > 0 then return edj.ui.show_message 'Errore Utente', 'Il profilo ' + name + ' &egrave gi&agrave presente.'
                
                # insert new item.
                edj.database.insert 'profiling.profiles', name: name, (err, data)->
-                  if err then return edj.gui.show_message 'Errore di Sistema', err.message
+                  if err then return edj.ui.show_message 'Errore di Sistema', err.message
                   grid = self.element.find '#grid'
                   item = data[0]
                   grid.jqGrid 'addRowData', item.id, { id: item.id, name: name }
@@ -116,11 +116,11 @@ define ['edijson', 'jquery_ui', 'jquery_grid'], (edj, $)->
          # get row data if a row is selected.
          grid = self.element.find('#grid')
          row_id = grid.jqGrid 'getGridParam', 'selrow'
-         if not row_id then return edj.gui.show_message 'Attenzione', 'Selezionare un elemento dalla griglia.'
+         if not row_id then return edj.ui.show_message 'Attenzione', 'Selezionare un elemento dalla griglia.'
          row = grid.jqGrid 'getRowData', row_id
          
          # admin profile can't be changed.
-         if edj.utility.to_upper(row.name) is 'ADMIN' then return edj.gui.show_message 'Attenzione', 'Il profilo Admin non può essere modificato.'
+         if edj.utility.to_upper(row.name) is 'ADMIN' then return edj.ui.show_message 'Attenzione', 'Il profilo Admin non può essere modificato.'
          
          # handle click event.
          form = self.element.find '#form'
@@ -129,14 +129,14 @@ define ['edijson', 'jquery_ui', 'jquery_grid'], (edj, $)->
             
             # test input validity.
             name = form.find('input#name').val()
-            if name is '' then return edj.gui.show_message 'Errore Utente', 'Compilare il campo nome.'
+            if name is '' then return edj.ui.show_message 'Errore Utente', 'Compilare il campo nome.'
             edj.database.select 'profiling.profiles', name: name, (err, data)->
-               if err then return edj.gui.show_message 'Errore di Sistema', err.message
-               if data.length is 1 and data[0].id is row.id or data.length > 1 then return edj.gui.show_message 'Errore Utente', 'Il profilo ' + name + ' &egrave gi&agrave presente.'
+               if err then return edj.ui.show_message 'Errore di Sistema', err.message
+               if data.length is 1 and data[0].id is row.id or data.length > 1 then return edj.ui.show_message 'Errore Utente', 'Il profilo ' + name + ' &egrave gi&agrave presente.'
                
                # update profile.
                edj.database.update 'profiling.profiles', { id: row.id, name: name }, (err, data)->
-                  if err then return edj.gui.show_message 'Errore di Sistema', err.message
+                  if err then return edj.ui.show_message 'Errore di Sistema', err.message
                   grid = self.element.find '#grid'
                   item = data[0]
                   grid.jqGrid 'setRowData', row_id, { id: item.id, name: name }
@@ -155,20 +155,20 @@ define ['edijson', 'jquery_ui', 'jquery_grid'], (edj, $)->
          # get row data if a row is selected.
          grid = self.element.find('#grid')
          row_id = grid.jqGrid 'getGridParam', 'selrow'
-         if not row_id then return edj.gui.show_message 'Attenzione', 'Selezionare un elemento dalla griglia.'
+         if not row_id then return edj.ui.show_message 'Attenzione', 'Selezionare un elemento dalla griglia.'
          row = grid.jqGrid 'getRowData', row_id
          
          # admin profile can't be deleted.
-         if edj.utility.to_upper(row.name) is 'ADMIN' then return edj.gui.show_message 'Attenzione', 'Il profilo Admin non può essere eliminato.'
+         if edj.utility.to_upper(row.name) is 'ADMIN' then return edj.ui.show_message 'Attenzione', 'Il profilo Admin non può essere eliminato.'
          
          # profile can't be deleted if there are users associated with it.
          edj.database.select 'profiling.users', id_profile: row.id, (err, data)->
-            if err then return edj.gui.show_message 'Errore di Sistema', err.message
-            if data.length > 0 then return edj.gui.show_message 'Errore Utente', 'Il profilo ' + row.name + ' è associato a ' + data.length + ' utenti, pertanto non può essere eliminato.'
+            if err then return edj.ui.show_message 'Errore di Sistema', err.message
+            if data.length > 0 then return edj.ui.show_message 'Errore Utente', 'Il profilo ' + row.name + ' è associato a ' + data.length + ' utenti, pertanto non può essere eliminato.'
          
          # delete profile.
          edj.database.delete 'profiling.profiles', id: row.id, (err, data)->
-            if err then return edj.gui.show_message 'Errore di Sistema', err.message
+            if err then return edj.ui.show_message 'Errore di Sistema', err.message
             grid.jqGrid 'delRowData', row_id
       
       

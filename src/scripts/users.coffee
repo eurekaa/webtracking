@@ -11,7 +11,7 @@
 define ['edijson', 'jquery_ui', 'jquery_grid'], (edj, $)->
 
    # load stylesheets.
-   edj.gui.load_stylesheets 'styles/libs/jquery/jquery.grid'
+   edj.ui.load_stylesheets 'styles/libs/jquery/jquery.grid'
 
    $.widget 'ui.users',
 
@@ -37,12 +37,13 @@ define ['edijson', 'jquery_ui', 'jquery_grid'], (edj, $)->
             autowidth: true
             width: '100%'
             height: '100%'
-            colNames: ['id', 'id_profile', 'Profilo', 'Username', 'Email', 'Nome', 'Cognome', 'Codice Cube']
+            colNames: ['id', 'id_profile', 'Profilo', 'Username', 'Password', 'Email', 'Nome', 'Cognome', 'Codice Cube']
             colModel: [
                { name: 'id', hidden: true }
                { name: 'id_profile', hidden: true }
                { name: 'profile' }
                { name: 'username' }
+               { name: 'password', hidden: true }
                { name: 'email' }
                { name: 'name' }
                { name: 'surname' }
@@ -61,11 +62,15 @@ define ['edijson', 'jquery_ui', 'jquery_grid'], (edj, $)->
          grid.jqGrid 'navButtonAdd', '#pager', caption: 'Resetta', buttonicon: "ui-icon-arrowreturnthick-1-w", cursor: "pointer", onClickButton: -> self.reset_form()
 
          # load grid data.
-         edj.database.select 'profiling.accounts', {}, (err, data)-> for item in data then grid.jqGrid 'addRowData', item.id, item
-
+         edj.database.select 'profiling.accounts', {}, (err, data)-> 
+            for item in data then grid.jqGrid 'addRowData', item.id, item
+         
          # bind resize event.
          self.element.on 'resized', -> self.resize()
          self.resize()
+
+         # trigger ready event.
+         self.element.trigger 'ready'
 
 
       _destroy: -> @.element.empty()
@@ -81,7 +86,7 @@ define ['edijson', 'jquery_ui', 'jquery_grid'], (edj, $)->
          # profile.
          input = input_container.clone().empty()
          combo = $('<select>', { 'id': 'profile' }) 
-         edj.gui.load_combo combo, 'profiling.profiles', 'seleziona..', 'id', 'name'
+         edj.ui.load_combo combo, 'profiling.profiles', 'seleziona..', 'id', 'name'
          input.append $('<label>', { 'for': 'profile', 'html': 'profilo' })
          input.append combo
          form.append input
@@ -95,13 +100,13 @@ define ['edijson', 'jquery_ui', 'jquery_grid'], (edj, $)->
          # password.
          input = input_container.clone().empty()
          input.append $('<label>', { 'for': 'password', 'html': 'password' })
-         input.append $('<input>', { 'type': 'password', 'id': 'password' })
+         input.append $('<input>', { 'type': 'password', 'id': 'password' }).on 'paste', (event)-> event.preventDefault()
          form.append input
 
          # password check.
          input = input_container.clone().empty().css 'padding-right': 0
          input.append $('<label>', { 'for': 'password_check', 'html': 'ridigita password' })
-         input.append $('<input>', { 'type': 'password', 'id': 'password_check' })
+         input.append $('<input>', { 'type': 'password', 'id': 'password_check' }).on 'paste', (event)-> event.preventDefault()
          form.append input
 
          # name.
@@ -155,14 +160,14 @@ define ['edijson', 'jquery_ui', 'jquery_grid'], (edj, $)->
          self = @
          self.element.find('#grid').jqGrid 'resetSelection'
          form = self.element.find '#form'
-         form.find('select#profile').val ''
-         form.find('input#username').val ''
-         form.find('input#password').val ''
-         form.find('input#password_check').val ''
-         form.find('input#name').val ''
-         form.find('input#surname').val ''
-         form.find('input#email').val ''
-         form.find('input#cube_code').val ''
+         form.find('#profile').val ''
+         form.find('#username').val ''
+         form.find('#password').val ''
+         form.find('#password_check').val ''
+         form.find('#name').val ''
+         form.find('#surname').val ''
+         form.find('#email').val ''
+         form.find('#cube_code').val ''
          form.find('button').off 'click'
          form.hide()
          self.resize()
@@ -177,25 +182,24 @@ define ['edijson', 'jquery_ui', 'jquery_grid'], (edj, $)->
          
          # test for required fields.
          if form.profile is '' or form.username is '' or form.password is '' or form.password_check is '' or form.name is '' or 
-         form.surname is '' or form.email is '' or form.cube_code is '' then return edj.gui.show_message 'Errore Utente', 'Tutti i campi sono obbligatori.'
+         form.surname is '' or form.email is '' or form.cube_code is '' then return edj.ui.show_message 'Errore Utente', 'Tutti i campi sono obbligatori.'
          
          # test password matching.
-         if form.password isnt form.password_check then return edj.gui.show_message 'Errore Utente', 'Le password non coincidono.'
+         if form.password isnt form.password_check then return edj.ui.show_message 'Errore Utente', 'Le password non coincidono.'
          
          # test email validity.
-         if not edj.regexp.test form.email, 'email' then return edj.gui.show_message 'Errore Utente', 'Inserire un indirizzo email valido.'
-         
-         # test user duplicates.
-         edj.database.select 'profiling.users', { username: form.username, password: form.password }, async: false, (err, data)->
-            if err then return edj.gui.show_message 'Errore di Sistema', err.message
-            if data.length isnt 0 then test = false; return edj.gui.show_message 'Errore Utente', 'L\'utente che si cerca di inserire è già presenta nel sistema.' 
+         if not edj.regexp.test form.email, 'email' then return edj.ui.show_message 'Errore Utente', 'Inserire un indirizzo email valido.' 
          
          return test
       
       
       insert: ->
          self = @
+         
+         # reset and show form (may be in use).
          form = self.element.find '#form'
+         self.reset_form()
+         form.show()
 
          # handle click event.
          form.find('button').on 'click', ->
@@ -206,22 +210,27 @@ define ['edijson', 'jquery_ui', 'jquery_grid'], (edj, $)->
             # read form values.
             values = self.read_form()
             
-            # remove unused fields.
-            delete values['password_check']
-            
-            # insert new user.
-            edj.database.insert 'profiling.users', values, (err, data)->
-               if err then return edj.gui.show_message 'Errore di Sistema', err.Message
-               grid = self.element.find '#grid'
-               item = data[0]
+            # test user duplicates.
+            edj.database.select 'profiling.users', { username: values.username, password: values.password }, (err, data)->
+               if err then return edj.ui.show_message 'Errore di Sistema', err.message
+               if data.length isnt 0 then return edj.ui.show_message 'Errore Utente', 'Gli username e password che si cerca di inserire sono già assegnati a un altro utente.'
                
-               # add user to grid.
-               values.profile = form.find('select#profile option:selected').text()
-               values.id = item.id
-               grid.jqGrid 'addRowData', item.id, values
+               # remove unused fields.
+               delete values['password_check']
                
-               # reset form.
-               self.reset_form()
+               # insert new user.
+               edj.database.insert 'profiling.users', values, (err, data)->
+                  if err then return edj.ui.show_message 'Errore di Sistema', err['Message']
+                  
+                  # add user to grid.
+                  grid = self.element.find '#grid'
+                  item = data[0]
+                  values.profile = form.find('select#profile option:selected').text()
+                  values.id = item.id
+                  grid.jqGrid 'addRowData', item.id, values
+                  
+                  # reset form.
+                  self.reset_form()
          
          # show form.
          form.show()
@@ -234,33 +243,60 @@ define ['edijson', 'jquery_ui', 'jquery_grid'], (edj, $)->
          # get row data if a row is selected.
          grid = self.element.find('#grid')
          row_id = grid.jqGrid 'getGridParam', 'selrow'
-         if not row_id then return edj.gui.show_message 'Attenzione', 'Selezionare un elemento dalla griglia.'
+         if not row_id then return edj.ui.show_message 'Attenzione', 'Selezionare un elemento dalla griglia.'
          row = grid.jqGrid 'getRowData', row_id
 
          # admin profile can't be changed.
-         if edj.utility.to_upper(row.name) is 'ADMIN' then return edj.gui.show_message 'Attenzione', 'Il profilo Admin non può essere modificato.'
+         if edj.utility.to_upper(row.name) is 'ADMIN' then return edj.ui.show_message 'Attenzione', 'Il profilo Admin non può essere modificato.'
 
-         # handle click event.
+         # reset and show form (may be in use).
          form = self.element.find '#form'
-         form.find('input#name').val row.name
+         self.reset_form()
+         form.show()
+         
+         # fill form.
+         form.find('#profile').val row.id_profile
+         form.find('#username').val row.username
+         form.find('#password').val row.password
+         form.find('#password_check').val row.password
+         form.find('#name').val row.name
+         form.find('#surname').val row.surname
+         form.find('#email').val row.email
+         form.find('#cube_code').val row.cube_code
+         
+         # handle click event.
          form.find('button').on 'click', ->
 
             # test input validity.
-            name = form.find('input#name').val()
-            if name is '' then return edj.gui.show_message 'Errore Utente', 'Compilare il campo nome.'
-            edj.database.select 'profiling.profiles', name: name, (err, data)->
-               if err then return edj.gui.show_message 'Errore di Sistema', err.message
-               if data.length is 1 and data[0].id is row.id or data.length > 1 then return edj.gui.show_message 'Errore Utente', 'Il profilo ' + name + ' &egrave gi&agrave presente.'
+            if self.validate_form() isnt true then return false
 
+            # read form values.
+            values = self.read_form()
+            
+            # test user duplicates.
+            edj.database.select 'profiling.users', { username: values.username, password: values.password }, { async: false }, (err, data)->
+               if err then return edj.ui.show_message 'Errore di Sistema', err.message
+               if data.length isnt 0 and data[0].id.toString() isnt row.id then return edj.ui.show_message 'Errore Utente', 'Gli username e password che si cerca di inserire sono già assegnati a un altro utente.'
+            
+               # remove unused fields.
+               delete values['password_check']
+               
+               # add id field.
+               values.id = row.id
+   
                # update profile.
-               edj.database.update 'profiling.profiles', { id: row.id, name: name }, (err, data)->
-                  if err then return edj.gui.show_message 'Errore di Sistema', err.message
+               edj.database.update 'profiling.users', values, (err, data)->
+                  if err then return edj.ui.show_message 'Errore di Sistema', err.message
+                  
+                  # update grid.
                   grid = self.element.find '#grid'
                   item = data[0]
-                  grid.jqGrid 'setRowData', row_id, { id: item.id, name: name }
-
+                  values.profile = form.find('select#profile option:selected').text()
+                  values.id = item.id
+                  grid.jqGrid 'setRowData', row_id, values
+   
                   # reset form.
-                  self.reset()
+                  self.reset_form()
 
          # show form.
          form.show()
@@ -271,17 +307,17 @@ define ['edijson', 'jquery_ui', 'jquery_grid'], (edj, $)->
          self = @
 
          # get row data if a row is selected.
-         grid = self.element.find('#grid')
+         grid = self.element.find '#grid'
          row_id = grid.jqGrid 'getGridParam', 'selrow'
-         if not row_id then return edj.gui.show_message 'Attenzione', 'Selezionare un elemento dalla griglia.'
+         if not row_id then return edj.ui.show_message 'Attenzione', 'Selezionare un elemento dalla griglia.'
          row = grid.jqGrid 'getRowData', row_id
 
          # admin profile can't be deleted.
-         if edj.utility.to_upper(row.name) is 'ADMIN' then return edj.gui.show_message 'Attenzione', 'L\' utente Admin non può essere eliminato.'
+         if edj.utility.to_upper(row.name) is 'ADMIN' then return edj.ui.show_message 'Attenzione', 'L\' utente Admin non può essere eliminato.'
 
          # delete profile.
          edj.database.delete 'profiling.users', id: row.id, (err, data)->
-            if err then return edj.gui.show_message 'Errore di Sistema', err.Message
+            if err then return edj.ui.show_message 'Errore di Sistema', err.Message
             grid.jqGrid 'delRowData', row_id
 
 

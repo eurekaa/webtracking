@@ -8,13 +8,16 @@
 // Created: 09/11/13 15.22
 
 
-doctype 5
+
+//doctype 5
+doctype HTML PUBLIC '-//W3C//DTD HTML 4.01//EN' 'http://www.w3.org/TR/html4/loose.dtd'
 html
     head
         title Novati Web Tracking
-        meta(name='viewport', content='width=device-width', initial-scale='1.0')
+        //meta(name='viewport', content='width=device-width', initial-scale='1.0')
+        meta(http-equiv="X-UA-Compatible", content="IE=edge")
         script(src='scripts/libs/utility/json.js')
-        script(src='scripts/libs/require.js', data-main='scripts/index')
+        script(src='scripts/libs/utility/require.js', data-main='scripts/index')
     body
         #left
             img.responsive(src='media/images/logo.png')

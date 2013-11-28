@@ -9,15 +9,19 @@
 
 
 define [
+   'scripts/libs/edijson/api'
    'scripts/libs/edijson/database'
-   'scripts/libs/edijson/gui'
+   'scripts/libs/edijson/date'
    'scripts/libs/edijson/regexp'
    'scripts/libs/edijson/session'
+   'scripts/libs/edijson/ui'
    'scripts/libs/edijson/utility'
-], (database, gui, regexp, session, utility)->
-   
+], (api, database, date, regexp, session, ui, utility)->
+
+   api: api
    database: database
-   gui: gui
+   date: date
    regexp: regexp
    session: session
+   ui: ui
    utility: utility
