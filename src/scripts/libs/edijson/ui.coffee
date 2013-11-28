@@ -36,14 +36,49 @@ define [
          if callback then callback null
    
    
-   show_message: (title, message)->
-      container = $('<div>')
-      container.html message
+   show_message: (title, message, buttons)->
+      
+      # add close button if not present.
+      if not buttons then buttons = [
+         text: 'chiudi', click: -> $(@).dialog 'close'; $(@).dialog 'destroy'; $(@).empty()
+      ]
+      
+      # create container and append to body.
+      container = $('<div>', { 'html': message })
       $('body').append container
+      
+      # open dialog.
       container.dialog
          show: 'bounce'
          title: title
          modal: true
-         buttons: [
-            text: 'chiudi', click: -> $(@).dialog 'close'; $(@).dialog 'destroy'; $(@).empty()
-         ]
+         buttons: buttons
+   
+   
+   show_progress: (title, message, position)->
+   
+      position = position || my: "center", at: "center", of: window
+      
+      # create container and append to body.
+      container = $('<div>', { 'id': 'progressbar' }).css 'width': '500px', 'padding': '10px'
+      message = $('<div>', { 'html': message }).css 'margin-bottom': '20px'
+      container.append message
+      progress = $('<div>').progressbar value: false
+      progress.find('.ui-progressbar-value').addClass 'ui-corner-all'
+      container.append progress
+      $('body').append container
+      
+      # open dialog.
+      container.dialog
+         width: 400
+         show: 'bounce'
+         title: title
+         modal: false
+         closeOnEscape: false
+         position: position
+   
+   hide_progress: ()->
+      progress = $('body').find '#progressbar'
+      progress.dialog 'close'
+      progress.dialog 'destroy'
+      progress.remove()
